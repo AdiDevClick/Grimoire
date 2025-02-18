@@ -18,7 +18,7 @@ router.post('/:id/rating ', auth, multerConfig, rateOneBook);
 router.put('/:id', auth, multerConfig, modifyBook);
 router.delete('/:id', auth, multerConfig, deleteBook);
 router.get('/', getAllBooks);
-router.get('/:id', getOneBook);
 router.get('/bestrating', getBestRatedBooks);
+router.get('/:id', getOneBook);
 
 export default router;
