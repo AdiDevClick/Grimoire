@@ -4,7 +4,7 @@ import fs from 'node:fs';
 /**
  * Récupère tous les Books depuis la DB
  */
-export async function getAllBooks(req, res, next) {
+export async function getAllBooks(req, res) {
     try {
         res.status(200).json(await Books.find());
     } catch (error) {
@@ -17,13 +17,26 @@ export async function getAllBooks(req, res, next) {
  */
 export async function getOneBook(req, res) {
     const id = req.params.id;
+
     try {
         res.status(200).json(await Books.findOne({ _id: id }));
     } catch (error) {
         res.status(404).json({ error });
     }
 }
-export async function getBestRatedBooks(req, res) {}
+
+/**
+ * Récupère les 3 meilleurs Books de la DB
+ */
+export async function getBestRatedBooks(req, res) {
+    try {
+        res.status(200).json(
+            await Books.find().sort({ averageRating: 'desc' }).limit(3)
+        );
+    } catch (error) {
+        res.status(404).json({ error });
+    }
+}
 
 /**
  * Récupère le formData, assigne l'image au nouvel objet
