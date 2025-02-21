@@ -17,5 +17,7 @@
         "react"
     ],
     "rules": {
+        "linebreak-style": ["error", "windows"],
+        "indent": 2
     }
 }
