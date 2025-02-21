@@ -1,3 +1,4 @@
+import { calculateAVG, getABook } from '../functions/api.js';
 import Books from '../models/Books.model.js';
 import fs from 'node:fs';
 
@@ -16,10 +17,8 @@ export async function getAllBooks(req, res) {
  * Récupère un seul Book depuis la DB
  */
 export async function getOneBook(req, res) {
-    const id = req.params.id;
-
     try {
-        res.status(200).json(await Books.findOne({ _id: id }));
+        res.status(200).json(await getABook(req));
     } catch (error) {
         res.status(404).json({ error });
     }
@@ -46,7 +45,10 @@ export async function createBook(req, res) {
     const parsedObject = JSON.parse(req.body.book);
     delete parsedObject._id;
     delete parsedObject.userId;
+    parsedObject.ratings = [];
+    parsedObject.averageRating = 0;
 
+    /** @type {import('../models/Books.model.js').Book} */
     const book = new Books({
         ...parsedObject,
         userId: req.auth.userId,
@@ -73,40 +75,51 @@ export async function createBook(req, res) {
  */
 export async function modifyBook(req, res) {
     const id = req.params.id;
-    const modifiedObject = req.file
-        ? {
-              ...JSON.parse(req.body.book),
-              imageUrl: `${req.protocol}://${req.get('host')}/images/${
-                  req.file.filename
-              }`,
-          }
-        : { ...req.body };
-    delete modifiedObject.userId;
+
     try {
-        const oldBook = await Books.findOne({ _id: id });
-        if (oldBook.userId !== req.auth.userId)
-            return res.status(401).json({ error: 'You are not authorized' });
+        const modifiedObject = req.file
+            ? {
+                  ...JSON.parse(req.body.book),
+                  imageUrl: `${req.protocol}://${req.get('host')}/images/${
+                      req.file.filename
+                  }`,
+              }
+            : { ...req.body };
+        delete modifiedObject.userId;
+        const oldBook = await getABook(req);
+
+        if (oldBook.userId !== req.auth.userId) {
+            throw new Error('unauthorized request', {
+                cause: { status: 403 },
+            });
+        }
 
         const filename = oldBook.imageUrl.split('/images')[1];
-        req.file
-            ? fs.unlink(`images/${filename}`, async () => {
-                  res.status(200).json(
-                      await Books.updateOne(
-                          { _id: id },
-                          { ...modifiedObject, _id: id }
-                      )
-                  );
-              })
-            : res
-                  .status(200)
-                  .json(
-                      await Books.updateOne(
-                          { _id: id },
-                          { ...modifiedObject, _id: id }
-                      )
-                  );
+        if (req.file) {
+            // New file => Delete previews file
+            // => Update the document
+            fs.unlink(`images/${filename}`, async () => {
+                res.status(200).json(
+                    await Books.updateOne(
+                        { _id: id },
+                        { ...modifiedObject, _id: id }
+                    )
+                );
+            });
+        } else {
+            // File already exists / Did not change
+            // => Update the document
+            res.status(200).json(
+                await Books.updateOne(
+                    { _id: id },
+                    { ...modifiedObject, _id: id }
+                )
+            );
+        }
     } catch (error) {
-        res.status(401).json({ error });
+        res.status(error.cause ? error.cause.status : 401).json({
+            error: error.message,
+        });
     }
 }
 
@@ -115,18 +128,78 @@ export async function modifyBook(req, res) {
  * que le fichier image relatif
  */
 export async function deleteBook(req, res) {
-    const id = req.params.id;
     try {
-        const book = await Books.findOne({ _id: id });
+        const book = await getABook(req);
+
         if (book.userId !== req.auth.userId)
-            return res.status(401).json({ error: 'You are not authorized' });
-        const filename = oldBook.imageUrl.split('/images')[1];
+            throw new Error('unauthorized request', {
+                cause: { status: 403 },
+            });
+
+        const filename = book.imageUrl.split('/images')[1];
         fs.unlink(`images/${filename}`, async () => {
-            await Things.deleteOne({ _id: id });
+            const id = req.params.id;
+            await Books.deleteOne({ _id: id });
             res.status(200).json({ message: 'Objet supprimé avec succès' });
         });
     } catch (error) {
-        res.status(401).json({ error });
+        res.status(error.cause ? error.cause.status : 401).json({
+            error: error.message,
+        });
     }
 }
-export async function rateOneBook(req, res) {}
+
+/**
+ * Ajoute une note d'un utilisateur et recalcule
+ * la note moyenne -
+ * @param {Request} req
+ * @returns {Object}
+ * @returns {Error}
+ */
+export async function rateOneBook(req, res, next) {
+    try {
+        /** @type {import('../models/Books.model.js').Book} */
+        const book = await getABook(req);
+        if (req.body.userId !== req.auth.userId)
+            throw new Error('unauthorized request', {
+                cause: { status: 403 },
+            });
+        if (req.body.rating <= 0 || req.body.rating > 5)
+            throw new Error('La note doit être comprise entre 0 et 5', {
+                cause: { status: 403 },
+            });
+
+        // // Saves rating
+        // const foundRating = book.ratings.some(
+        //     (rating) => rating.userId === req.auth.userId
+        // );
+        // if (foundRating)
+        //     throw new Error(
+        //         'Vous ne pouvez pas noter un livre plusieurs fois',
+        //         { cause: { status: 403 } }
+        //     );
+
+        book.ratings.push({
+            userId: req.auth.userId,
+            grade: req.body.rating,
+        });
+
+        await book.save();
+
+        // Calculate AVG
+        const avg = await calculateAVG(book._id);
+        if (avg.length > 0) {
+            book.averageRating = avg[0].averageRating;
+            await book.save();
+            res.status(200).json(book);
+        } else {
+            throw new Error('Impossible de calculer la note moyenne', {
+                cause: { status: 500 },
+            });
+        }
+    } catch (error) {
+        res.status(error.cause ? error.cause.status : 500).json({
+            error: error.message,
+        });
+    }
+}
