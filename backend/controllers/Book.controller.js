@@ -193,6 +193,7 @@ export async function rateOneBook(req, res, next) {
             userId: req.auth.userId,
             grade: req.body.rating,
         });
+
         await book.save();
 
         // Calculate AVG
@@ -208,7 +209,7 @@ export async function rateOneBook(req, res, next) {
         }
     } catch (error) {
         res.status(error.cause ? error.cause.status : 500).json({
-            error: error.message,
+            message: error.message,
         });
     }
 }
