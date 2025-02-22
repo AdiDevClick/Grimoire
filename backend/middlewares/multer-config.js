@@ -8,6 +8,12 @@ import {
 } from '../configs/config.js';
 import sharp from 'sharp';
 
+/**
+ * Compresse les images au format webP avec Sharp -
+ * La qualité est définie dans le fichier config.js
+ * @param {multer} multerConfig
+ * @param {Request} req
+ */
 const uploadHandler = (multerConfig, req, res, next) => {
     const upload = multer(multerConfig).single('image');
     upload(req, res, async (err) => {
@@ -47,7 +53,6 @@ const uploadHandler = (multerConfig, req, res, next) => {
                 req.file.originalname
             )}`;
 
-            // const saveTo = path.resolve(__dirname, 'public', 'images');
             const filePath = path.join('images', filename);
 
             await sharp(req.file.buffer)
