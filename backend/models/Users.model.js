@@ -4,7 +4,12 @@ import bcrypt from 'bcrypt';
 import { emailRegex, passwordRegex } from '../configs/config.js';
 
 /**
- * @typedef {Object} User
+ * User Model w/ methods
+ * @typedef {typeof mongoose.Model & userSchema} User
+ */
+
+/**
+ * @typedef {Object} userSchema
  * @property {string} _id - Index de l'objet créé automatiquement par MongoDB
  * @property {string} email - Email de l'utilisateur.
  * @property {string} password - Mot de passe de l'utilisateur
@@ -38,13 +43,13 @@ const userSchema = new mongoose.Schema({
  * Hash le mot de passe avant de sauvegarder l'utilisateur
  */
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        return console.log('not modified');
-        return next();
+    if (!this.$isNew) {
+        throw new Error('unauthorized request');
     }
 
     try {
         const salt = await bcrypt.genSalt(10);
+
         this.password = await bcrypt.hash(this.password, salt);
         next();
     } catch (error) {
