@@ -74,7 +74,7 @@ const uploadHandler = (multerConfig, req, res, next) => {
 
 /**
  * Configuration de multer pour la réception de fichiers
- * @returns {Function}
+ * @returns {typeof uploadHandler}
  */
 const multerConfig = (req, res, next) => {
     const upload = {
