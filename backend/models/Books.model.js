@@ -1,7 +1,12 @@
 import mongoose from 'mongoose';
 
 /**
- * @typedef {Object} Book
+ * Book Model w/ methods
+ * @typedef {typeof mongoose.Model & bookSchema} Book
+ */
+
+/**
+ * @typedef {Object} bookSchema
  * @property {string} _id - Index de l'objet créé automatiquement par MongoDB
  * @property {string} userId
  * @property {string} title
@@ -19,7 +24,7 @@ const bookSchema = mongoose.Schema({
     author: { type: String, required: true },
     imageUrl: { type: String, required: true },
     year: { type: Number, required: true },
-    genre: { type: String, required: false },
+    genre: { type: String, required: true },
     ratings: [
         {
             userId: { type: String },
@@ -55,4 +60,5 @@ bookSchema.pre('save', function (next) {
         next(error);
     }
 });
+
 export default mongoose.model('Book', bookSchema);
