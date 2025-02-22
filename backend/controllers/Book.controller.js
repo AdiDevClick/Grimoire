@@ -1,4 +1,5 @@
 import { calculateAVG, getABook } from '../functions/api.js';
+
 import Books from '../models/Books.model.js';
 import fs from 'node:fs';
 
@@ -42,22 +43,25 @@ export async function getBestRatedBooks(req, res) {
  * ainsi que l'ID de l'utilisateur depuis son token
  */
 export async function createBook(req, res) {
-    const parsedObject = JSON.parse(req.body.book);
-    delete parsedObject._id;
-    delete parsedObject.userId;
-    parsedObject.ratings = [];
-    parsedObject.averageRating = 0;
-
-    /** @type {import('../models/Books.model.js').Book} */
-    const book = new Books({
-        ...parsedObject,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${
-            req.file.filename
-        }`,
-    });
-
     try {
+        if (!req.body.book)
+            throw new Error('Veillez à renseigner tous les champs', {
+                cause: { status: 403 },
+            });
+        const parsedObject = JSON.parse(req.body.book);
+        delete parsedObject._id;
+        delete parsedObject.userId;
+        parsedObject.ratings = [];
+        parsedObject.averageRating = 0;
+
+        /** @type {import('../models/Books.model.js').Book} */
+        const book = new Books({
+            ...parsedObject,
+            userId: req.auth.userId,
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${
+                req.file.filename
+            }`,
+        });
         await book.save();
         res.status(201).json({
             message: 'Objet enregistré',
@@ -65,7 +69,9 @@ export async function createBook(req, res) {
             status: res.statusCode,
         });
     } catch (error) {
-        res.status(404).json({ error });
+        res.status(error.cause ? error.cause.status : 404).json({
+            message: error.message,
+        });
     }
 }
 
@@ -75,8 +81,12 @@ export async function createBook(req, res) {
  */
 export async function modifyBook(req, res) {
     const id = req.params.id;
-
     try {
+        if (!req.body.userId && !req.body.book)
+            throw new Error('unauthorized request', {
+                cause: { status: 403 },
+            });
+
         const modifiedObject = req.file
             ? {
                   ...JSON.parse(req.body.book),
@@ -85,9 +95,10 @@ export async function modifyBook(req, res) {
                   }`,
               }
             : { ...req.body };
-        delete modifiedObject.userId;
-        const oldBook = await getABook(req);
 
+        delete modifiedObject.userId;
+
+        const oldBook = await getABook(req);
         if (oldBook.userId !== req.auth.userId) {
             throw new Error('unauthorized request', {
                 cause: { status: 403 },
@@ -178,12 +189,10 @@ export async function rateOneBook(req, res, next) {
         //         'Vous ne pouvez pas noter un livre plusieurs fois',
         //         { cause: { status: 403 } }
         //     );
-
         book.ratings.push({
             userId: req.auth.userId,
             grade: req.body.rating,
         });
-
         await book.save();
 
         // Calculate AVG
