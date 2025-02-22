@@ -10,10 +10,9 @@ import bcrypt from 'bcrypt';
 export async function signup(req, res) {
     try {
         const user = new UsersModel({
-            email: req.body.email,
-            password: req.body.password,
+            email: req.body.email.toString().trim(),
+            password: req.body.password.toString(),
         });
-
         const createdUser = await user.save();
 
         if (createdUser) {
