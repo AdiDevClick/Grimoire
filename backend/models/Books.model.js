@@ -43,6 +43,10 @@ const bookSchema = mongoose.Schema({
  * noté un livre -
  */
 bookSchema.pre('save', function (next) {
+    // On second save, we abort checking
+    if (!this.isModified('ratings')) return next();
+
+    // On first check
     const ratingUserId = [];
     try {
         for (const rating of this.ratings) {
