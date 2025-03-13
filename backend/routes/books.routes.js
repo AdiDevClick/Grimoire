@@ -9,7 +9,7 @@ import {
     rateOneBook,
 } from '../controllers/Book.controller.js';
 import { auth } from '../middlewares/auth.js';
-import multerConfig from '../middlewares/multer-config.js';
+import multerConfig from '../middlewares/multerConfig.js';
 
 const router = Router();
 
