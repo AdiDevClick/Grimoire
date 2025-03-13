@@ -1,4 +1,4 @@
-import { calculateAVG, getABook } from '../functions/api.js';
+import { calculatedAVG, getABook } from '../functions/api.js';
 
 import Books from '../models/Books.model.js';
 import fs from 'node:fs';
@@ -63,6 +63,7 @@ export async function createBook(req, res) {
             }`,
         });
         await book.save();
+
         res.status(201).json({
             message: 'Objet enregistré',
             ok: true,
@@ -78,6 +79,7 @@ export async function createBook(req, res) {
 /**
  * Modifie un Book de la DB existant et remplace l'ancienne image
  * par la nouvelle si nécessaire
+ * @param {Request} req
  */
 export async function modifyBook(req, res) {
     const id = req.params.id;
@@ -99,6 +101,7 @@ export async function modifyBook(req, res) {
         delete modifiedObject.userId;
 
         const oldBook = await getABook(req);
+
         if (oldBook.userId !== req.auth.userId) {
             throw new Error('unauthorized request', {
                 cause: { status: 403 },
@@ -141,7 +144,6 @@ export async function modifyBook(req, res) {
 export async function deleteBook(req, res) {
     try {
         const book = await getABook(req);
-
         if (book.userId !== req.auth.userId)
             throw new Error('unauthorized request', {
                 cause: { status: 403 },
@@ -189,6 +191,7 @@ export async function rateOneBook(req, res, next) {
         //         'Vous ne pouvez pas noter un livre plusieurs fois',
         //         { cause: { status: 403 } }
         //     );
+
         book.ratings.push({
             userId: req.auth.userId,
             grade: req.body.rating,
@@ -197,9 +200,9 @@ export async function rateOneBook(req, res, next) {
         await book.save();
 
         // Calculate AVG
-        const avg = await calculateAVG(book._id);
+        const avg = await calculatedAVG(book._id);
         if (avg.length > 0) {
-            book.averageRating = avg[0].averageRating;
+            book.averageRating = Math.round(avg[0].averageRating);
             await book.save();
             res.status(200).json(book);
         } else {
