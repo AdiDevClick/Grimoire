@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import mongooseUniqueValidator from 'mongoose-unique-validator';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import { emailRegex, passwordRegex } from '../configs/config.js';
 
 /**
@@ -41,16 +41,16 @@ const userSchema = new mongoose.Schema({
 
 /**
  * Hash le mot de passe avant de sauvegarder l'utilisateur
+ * Utilisé sur la route users/signup
  */
 userSchema.pre('save', async function (next) {
     if (!this.$isNew) {
         throw new Error('unauthorized request');
+        next();
     }
 
     try {
-        const salt = await bcrypt.genSalt(10);
-
-        this.password = await bcrypt.hash(this.password, salt);
+        this.password = await argon2.hash(this.password);
         next();
     } catch (error) {
         next(error);
