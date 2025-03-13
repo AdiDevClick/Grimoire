@@ -6,11 +6,17 @@ import JsonWebToken from 'jsonwebtoken';
  */
 export const auth = (req, res, next) => {
     try {
+        // No Authorization Headers ?
+        if (!req.headers.authorization) {
+            throw new Error('unauthorized request', { cause: { status: 401 } });
+        }
+
         const token = req.headers.authorization.split(' ')[1];
         const decodedToken = JsonWebToken.verify(
             token,
             process.env.TOKEN_SECRET
         );
+
         const userId = decodedToken.userId;
 
         req.auth = {
@@ -19,6 +25,9 @@ export const auth = (req, res, next) => {
 
         next();
     } catch (error) {
-        res.status(401).json({ error: 'unauthorized request' });
+        res.status(error.cause ? error.cause.status : 401).json({
+            message: error.message,
+            error: error,
+        });
     }
 };
