@@ -1,6 +1,6 @@
 import { createServer } from 'http';
 import app from './app.js';
-import 'dotenv/config.js';
+import toobusy from 'toobusy-js';
 
 const normalizePort = (val) => {
     const port = parseInt(val, 10);
@@ -50,3 +50,10 @@ server.on('listening', () => {
 });
 
 server.listen(port);
+
+process.on('SIGINT', function () {
+    server.close();
+    // calling .shutdown allows your process to exit normally
+    toobusy.shutdown();
+    process.exit();
+});
