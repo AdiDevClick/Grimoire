@@ -52,7 +52,7 @@ bookSchema.pre('save', function (next) {
         for (const rating of this.ratings) {
             if (ratingUserId.includes(rating.userId)) {
                 throw new Error(
-                    'Vous ne pouvez pas noter un livre plusieures fois',
+                    'Vous ne pouvez pas noter un livre plusieurs fois',
                     { cause: { status: 403 } }
                 );
             } else {
