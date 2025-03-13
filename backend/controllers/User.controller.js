@@ -1,6 +1,6 @@
 import JsonWebToken from 'jsonwebtoken';
 import UsersModel from '../models/Users.model.js';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 
 /**
  * Crer un utilisateur unique dans la DB
@@ -13,6 +13,8 @@ export async function signup(req, res) {
             email: req.body.email.toString().trim(),
             password: req.body.password.toString(),
         });
+
+        // Hash password using Argon using "pre" save
         const createdUser = await user.save();
 
         if (createdUser) {
@@ -48,18 +50,19 @@ export async function login(req, res) {
             throw new Error(errorMessage, { cause: { status: 401 } });
         }
 
-        const valid = await bcrypt.compare(req.body.password, user.password);
+        // Compare hash passwords
+        const valid = await argon2.verify(user.password, req.body.password);
         if (!valid) throw new Error(errorMessage, { cause: { status: 401 } });
+
+        const JWTToken = JsonWebToken.sign(
+            { userId: user._id },
+            process.env.TOKEN_SECRET,
+            { expiresIn: process.env.TOKEN_EXPIRES }
+        );
 
         res.status(200).json({
             userId: user._id,
-            token: JsonWebToken.sign(
-                { userId: user._id },
-                process.env.TOKEN_SECRET,
-                {
-                    expiresIn: process.env.TOKEN_EXPIRES,
-                }
-            ),
+            token: JWTToken,
         });
     } catch (error) {
         res.status(error.cause ? error.cause.status : 401).json({
