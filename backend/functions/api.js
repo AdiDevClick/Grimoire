@@ -1,14 +1,13 @@
-import 'dotenv/config.js';
 import mongoose from 'mongoose';
 import Books from '../models/Books.model.js';
 
 /**
  * Permet de se connecter à la MongoDB Atlas
  */
-export async function run() {
+export function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await mongoose.connect(process.env.URI, {
+        mongoose.connect(process.env.URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
@@ -31,7 +30,7 @@ export async function getABook(req) {
     try {
         return await Books.findOne({ _id: id });
     } catch (error) {
-        res.status(404).json({ error });
+        res.status(404).json({ message: error.message });
     }
 }
 
@@ -41,7 +40,7 @@ export async function getABook(req) {
  * @param {string} id - L'ID du book à rechercher
  * @returns {object}
  */
-export async function calculateAVG(id) {
+export async function calculatedAVG(id) {
     const calculatedAVG = await Books.aggregate([
         { $match: { _id: id } },
         {
