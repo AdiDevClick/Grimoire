@@ -7,6 +7,7 @@ import {
     MIME_TYPES,
 } from '../configs/config.js';
 import sharp from 'sharp';
+import fs from 'node:fs';
 
 /**
  * Compresse les images au format webP avec Sharp -
@@ -48,6 +49,13 @@ const uploadHandler = (multerConfig, req, res, next) => {
 
             // User did not select a new file -
             if (!req.file) return next();
+
+            // Create folder if necessary
+            if (!fs.existsSync('./images')) {
+                fs.mkdir('images', { recursive: true }, (err) => {
+                    if (err) throw err;
+                });
+            }
 
             const filename = `${Date.now()}${path.extname(
                 req.file.originalname
