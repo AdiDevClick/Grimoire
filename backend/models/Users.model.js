@@ -46,7 +46,6 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('save', async function (next) {
     if (!this.$isNew) {
         throw new Error('unauthorized request');
-        next();
     }
 
     try {

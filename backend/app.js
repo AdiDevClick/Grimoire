@@ -4,7 +4,10 @@ import booksRoutes from './routes/books.routes.js';
 import userRoutes from './routes/users.routes.js';
 import path from 'path';
 import loadEnv from './configs/loadEnv.config.js';
-import { tooBusyHandler } from './middlewares/tooBusy.js';
+import {
+    simulateHeavyProcessing,
+    tooBusyHandler,
+} from './middlewares/tooBusy.js';
 
 const __dirname = path.resolve();
 const app = express();
