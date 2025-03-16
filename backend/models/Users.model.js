@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import mongooseUniqueValidator from 'mongoose-unique-validator';
 import argon2 from 'argon2';
 import { emailRegex, passwordRegex } from '../configs/config.js';
 
@@ -55,7 +54,5 @@ userSchema.pre('save', async function (next) {
         next(error);
     }
 });
-
-userSchema.plugin(mongooseUniqueValidator);
 
 export default mongoose.model('User', userSchema);
