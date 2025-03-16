@@ -27,6 +27,16 @@ export async function signup(req, res) {
             });
         }
     } catch (error) {
+        // Duplicated key on signup ? (error 11000)
+        if (error.code === 11000) {
+            error = {
+                message: 'Cet utilisateur existe déjà',
+                cause: {
+                    status: 403,
+                },
+            };
+        }
+
         res.status(error.cause ? error.cause.status : 500).json({
             message: error.message,
         });
