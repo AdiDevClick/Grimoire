@@ -21,7 +21,7 @@ export async function getOneBook(req, res) {
     try {
         res.status(200).json(await getABook(req));
     } catch (error) {
-        res.status(404).json({ error });
+        res.status(404).json({ message: error.message });
     }
 }
 

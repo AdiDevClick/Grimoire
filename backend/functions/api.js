@@ -28,9 +28,13 @@ export function run() {
 export async function getABook(req) {
     const id = req.params.id;
     try {
-        return await Books.findOne({ _id: id });
+        const book = await Books.findOne({ _id: id });
+        if (!book) {
+            throw new Error('Aucun livre trouvé');
+        }
+        return book;
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        throw new Error(error.message);
     }
 }
 
